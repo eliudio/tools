@@ -89,9 +89,9 @@ public class ChangeVersion {
 					if (pos > 0) {
 						String remaining = currentVersion.substring(pos);
 						int number = Integer.parseInt(remaining);
-						newNewVersion = currentVersion.substring(0, pos) + "+" + (number + 1);
+						newNewVersion = "^" + currentVersion.substring(0, pos) + "+" + (number + 1);
 					} else {
-						newNewVersion = currentVersion + "+1";
+						newNewVersion = "^" + currentVersion + "+1";
 					}
 				} else {
 					newNewVersion = "^" + newVersion;
