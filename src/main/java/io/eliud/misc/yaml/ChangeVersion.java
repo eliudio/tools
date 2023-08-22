@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactoryBuilder;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 import com.fasterxml.jackson.dataformat.yaml.util.StringQuotingChecker;
 
 import io.eliud.git.Commit;
@@ -74,7 +75,9 @@ public class ChangeVersion {
 
 			File referencedFile = new File(sourceDir + "/" + packageDir + "/pubspec.yaml");
 			if (referencedFile.exists()) {
-				ObjectMapper referencedObjectMapper = new YAMLMapper();
+				YAMLFactory myFactory = new YAMLFactory();
+				YAMLFactoryBuilder yamlFactoryBuilder = (new YAMLFactoryBuilder(myFactory)).configure(Feature.MINIMIZE_QUOTES, false);
+				ObjectMapper referencedObjectMapper = new YAMLMapper(yamlFactoryBuilder.build());
 				Map<String, Object> pubspecReferenced = referencedObjectMapper.readValue(referencedFile,
 						new TypeReference<Map<String, Object>>() {
 						});
@@ -96,13 +99,16 @@ public class ChangeVersion {
 
 				System.out.println(currentPackageName + " " + currentVersion + " => " + newNewVersion);
 				pubspecReferenced.put("version", newNewVersion);
-				referencedObjectMapper.writeValue(referencedFile, pubspecReferenced);
+				YAMLFactoryBuilder yamlFactoryBuilderWriter = (new YAMLFactoryBuilder(myFactory)).configure(Feature.MINIMIZE_QUOTES, true);
+				ObjectMapper referencedObjectMapperWriter = new YAMLMapper(yamlFactoryBuilderWriter.build());
+				referencedObjectMapperWriter.writeValue(referencedFile, pubspecReferenced);
 
 				boolean referencingFound = false;
 				for (File dir : directories) {
 					File sourceFile = new File(dir.getAbsolutePath() + "/pubspec.yaml");
 					if (sourceFile.exists()) {
-						YAMLFactoryBuilder factory = (new YAMLFactory().builder()).stringQuotingChecker(new MyStringQuotingChecker());
+//						YAMLFactoryBuilder factory = (new YAMLFactory().builder()).stringQuotingChecker(new MyStringQuotingChecker());
+						YAMLFactoryBuilder factory = (new YAMLFactoryBuilder(myFactory)).configure(Feature.MINIMIZE_QUOTES, false);
 						ObjectMapper objectMapper = new YAMLMapper(factory.build());
 						Map<String, Object> pubspec = objectMapper.readValue(sourceFile,
 								new TypeReference<Map<String, Object>>() {
