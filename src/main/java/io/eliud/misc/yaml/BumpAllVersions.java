@@ -27,7 +27,7 @@ public class BumpAllVersions {
 					String currentPackageName = pubspecReferenced.get("name").toString();
 					String currentVersion = pubspecReferenced.get("version").toString();
 					if ((currentPackageName != null) && (currentVersion != null)) {
-						System.out.println("Bumping version " + currentVersion.toString() + " of " + currentPackageName + " +1");
+						System.out.println("Bumping version " + currentVersion.toString() + " of " + dir.getName() + " +1");
 						ChangeVersion.change(sourceDir, currentPackageName, "+1");
 					}
 				} catch (IOException e) {
