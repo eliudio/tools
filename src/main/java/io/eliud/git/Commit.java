@@ -18,15 +18,14 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import io.eliud.misc.helper.DirectoryHelper;
+import io.eliud.misc.helper.IsEliudDirectory;
 
 
 public class Commit {
 
 	public static void main(String[] args) {
 		try {
-			// current directory
-			String sourceDir = System.getProperty("user.dir");
-			System.out.println("Current directory: " + sourceDir);
+			String sourceDir = IsEliudDirectory.getCurrentDirectory();
 
 	        Options options = new Options();
 	        Option messageOption = new Option("m", "message", true, "The commit message");
@@ -38,6 +37,12 @@ public class Commit {
 	        try {
 		        CommandLine cmd = parser.parse(options, args);
 		        String message = cmd.getOptionValue("message");
+		        if (message.length() == 0) {
+		            System.out.println("commit message must at least be 1 character");
+		            formatter.printHelp(Commit.class.getName(), options);
+
+		            System.exit(1);
+		        }
 
 				File[] directories = DirectoryHelper.getDirectories(sourceDir);
 				for (File dir : directories) {

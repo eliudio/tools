@@ -10,14 +10,13 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import io.eliud.misc.helper.DirectoryHelper;
+import io.eliud.misc.helper.IsEliudDirectory;
 
 public class Add {
 
 	public static void main(String[] args) {
 		try {
-			// current directory
-			String sourceDir = System.getProperty("user.dir");
-			System.out.println("Current directory: " + sourceDir);
+			String sourceDir = IsEliudDirectory.getCurrentDirectory();
 
 			File[] directories = DirectoryHelper.getDirectories(sourceDir);
 			for (File dir : directories) {

@@ -17,13 +17,12 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 import io.eliud.git.Commit;
 import io.eliud.misc.helper.DirectoryHelper;
+import io.eliud.misc.helper.IsEliudDirectory;
 
 public class ChangeVersion {
 
 	public static void main(String[] args) {
-		// current directory
-		String sourceDir = System.getProperty("user.dir");
-		System.out.println("Current directory: " + sourceDir);
+		String sourceDir = IsEliudDirectory.getCurrentDirectory();
 
         Options options = new Options();
         Option packageOption = new Option("p", "package", true, "The package of which you want to change it's version, e.g. eliud_pkg_apps");
@@ -40,6 +39,18 @@ public class ChangeVersion {
 	        CommandLine cmd = parser.parse(options, args);
 	        String packageName = cmd.getOptionValue("package");
 	        String newVersion = cmd.getOptionValue("version");
+	        if (packageName.length() == 0) {
+	            System.out.println("package name is empty");
+	            formatter.printHelp(ChangeVersion.class.getName(), options);
+
+	            System.exit(1);
+	        }
+	        if (newVersion.length() == 0) {
+	            System.out.println("version name is empty");
+	            formatter.printHelp(ChangeVersion.class.getName(), options);
+
+	            System.exit(1);
+	        }
 		
 	        change(sourceDir, packageName, newVersion);
         } catch (ParseException e) {
@@ -64,7 +75,7 @@ public class ChangeVersion {
 				String currentPackageName = pubspecReferenced.get("name").toString();
 				if (currentPackageName.equals(packageName)) {
 					String currentVersion = pubspecReferenced.get("version").toString();
-					if (newVersion == "+1") {
+					if (newVersion.equals("+1")) {
 						int pos = currentVersion.indexOf('+');
 						if (pos > 0) {
 							String remaining = currentVersion.substring(pos);

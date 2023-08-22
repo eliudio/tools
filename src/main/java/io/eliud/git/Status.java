@@ -9,6 +9,7 @@ import org.eclipse.jgit.internal.storage.file.FileRepository;
 import org.eclipse.jgit.lib.Repository;
 
 import io.eliud.misc.helper.DirectoryHelper;
+import io.eliud.misc.helper.IsEliudDirectory;
 
 public class Status {
 	
@@ -16,9 +17,7 @@ public class Status {
 
 	public static void main(String[] args) {
 		try {
-			// current directory
-			String sourceDir = System.getProperty("user.dir");
-			System.out.println("Current directory: " + sourceDir);
+			String sourceDir = IsEliudDirectory.getCurrentDirectory();
 
 			File[] directories = DirectoryHelper.getDirectories(sourceDir);
 			for (File dir : directories) {

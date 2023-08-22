@@ -12,6 +12,7 @@ import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 import io.eliud.misc.helper.DirectoryHelper;
+import io.eliud.misc.helper.IsEliudDirectory;
 
 public class Push {
 
@@ -29,9 +30,7 @@ public class Push {
 			}
 			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(userName, password);
 			
-			// current directory
-			String sourceDir = System.getProperty("user.dir");
-			System.out.println("Current directory: " + sourceDir);
+			String sourceDir = IsEliudDirectory.getCurrentDirectory();
 
 			File[] directories = DirectoryHelper.getDirectories(sourceDir);
 			for (File dir : directories) {
