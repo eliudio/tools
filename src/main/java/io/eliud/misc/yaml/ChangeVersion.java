@@ -13,7 +13,10 @@ import org.apache.commons.cli.ParseException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactoryBuilder;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.fasterxml.jackson.dataformat.yaml.util.StringQuotingChecker;
 
 import io.eliud.git.Commit;
 import io.eliud.misc.helper.DirectoryHelper;
@@ -83,9 +86,9 @@ public class ChangeVersion {
 					if (pos > 0) {
 						String remaining = currentVersion.substring(pos);
 						int number = Integer.parseInt(remaining);
-						newNewVersion = "^" + currentVersion.substring(0, pos) + "+" + (number + 1);
+						newNewVersion = currentVersion.substring(0, pos) + "+" + (number + 1);
 					} else {
-						newNewVersion = "^" + currentVersion + "+1";
+						newNewVersion = currentVersion + "+1";
 					}
 				} else {
 					newNewVersion = "^" + newVersion;
@@ -99,7 +102,8 @@ public class ChangeVersion {
 				for (File dir : directories) {
 					File sourceFile = new File(dir.getAbsolutePath() + "/pubspec.yaml");
 					if (sourceFile.exists()) {
-						ObjectMapper objectMapper = new YAMLMapper();
+						YAMLFactoryBuilder factory = (new YAMLFactory().builder()).stringQuotingChecker(new MyStringQuotingChecker());
+						ObjectMapper objectMapper = new YAMLMapper(factory.build());
 						Map<String, Object> pubspec = objectMapper.readValue(sourceFile,
 								new TypeReference<Map<String, Object>>() {
 								});
