@@ -1,7 +1,5 @@
 package io.eliud.git;
 
-
-
 import java.io.File;
 
 import org.eclipse.jgit.api.Git;
@@ -20,21 +18,21 @@ public class Add {
 
 			File[] directories = DirectoryHelper.getDirectories(sourceDir);
 			for (File dir : directories) {
-
-				FileRepositoryBuilder x;
 				Repository localRepo = new FileRepository(dir.getAbsolutePath() + "/.git");
-				Git git = new Git(localRepo);   
+				Git git = new Git(localRepo);
 				org.eclipse.jgit.api.Status status = git.status().call();
-				if (status.hasUncommittedChanges()) {
+				if (!status.getAdded().isEmpty() || !status.getChanged().isEmpty()
+						|| !status.getConflicting().isEmpty() || !status.getMissing().isEmpty()
+						|| !status.getModified().isEmpty() || !status.getRemoved().isEmpty()
+						|| !status.getUncommittedChanges().isEmpty() || !status.getUntracked().isEmpty()) {
 					System.out.println(dir);
 					git.add().addFilepattern(".").call();
-					//git.add().setUpdate(true).addFilepattern(".").call();
+					git.add().setUpdate(true).addFilepattern(".").call();
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
-	
+
 }
