@@ -24,108 +24,109 @@ public class ChangeVersion {
 	public static void main(String[] args) {
 		String sourceDir = IsEliudDirectory.getCurrentDirectory();
 
-        Options options = new Options();
-        Option packageOption = new Option("p", "package", true, "The package of which you want to change it's version, e.g. eliud_pkg_apps");
-        packageOption .setRequired(true);
-        options.addOption(packageOption);
-        Option versionOption = new Option("v", "version", true, "The version the package should become (or +1 to bump one up), e.g. 1.4.1, 1.4.1+3 or +1");
-        versionOption .setRequired(true);
-        options.addOption(versionOption);
+		Options options = new Options();
+		Option packageOption = new Option("p", "package", true,
+				"The package of which you want to change it's version, e.g. eliud_pkg_apps");
+		packageOption.setRequired(true);
+		options.addOption(packageOption);
+		Option versionOption = new Option("v", "version", true,
+				"The version the package should become (or +1 to bump one up), e.g. 1.4.1, 1.4.1+3 or +1");
+		versionOption.setRequired(true);
+		options.addOption(versionOption);
 
-        CommandLineParser parser = new DefaultParser();
-        HelpFormatter formatter = new HelpFormatter();
+		CommandLineParser parser = new DefaultParser();
+		HelpFormatter formatter = new HelpFormatter();
 
-        try {
-	        CommandLine cmd = parser.parse(options, args);
-	        String packageName = cmd.getOptionValue("package");
-	        String newVersion = cmd.getOptionValue("version");
-	        if (packageName.length() == 0) {
-	            System.out.println("package name is empty");
-	            formatter.printHelp(ChangeVersion.class.getName(), options);
+		try {
+			CommandLine cmd = parser.parse(options, args);
+			String packageName = cmd.getOptionValue("package");
+			String newVersion = cmd.getOptionValue("version");
+			if (packageName.length() == 0) {
+				System.out.println("package name is empty");
+				formatter.printHelp(ChangeVersion.class.getName(), options);
 
-	            System.exit(1);
-	        }
-	        if (newVersion.length() == 0) {
-	            System.out.println("version name is empty");
-	            formatter.printHelp(ChangeVersion.class.getName(), options);
+				System.exit(1);
+			}
+			if (newVersion.length() == 0) {
+				System.out.println("version name is empty");
+				formatter.printHelp(ChangeVersion.class.getName(), options);
 
-	            System.exit(1);
-	        }
-		
-	        change(sourceDir, packageName, newVersion);
-        } catch (ParseException e) {
-            System.out.println(e.getMessage());
-            formatter.printHelp(ChangeVersion.class.getName(), options);
+				System.exit(1);
+			}
 
-            System.exit(1);
+			change(sourceDir, packageName, newVersion);
+		} catch (ParseException e) {
+			System.out.println(e.getMessage());
+			formatter.printHelp(ChangeVersion.class.getName(), options);
+
+			System.exit(1);
 
 		}
-    }
+	}
 
-	public static void change(String sourceDir, String packageName, String newVersion) {
+	public static void change(String sourceDir, String packageDir, String newVersion) {
 		try {
 			String newNewVersion;
 			File[] directories = DirectoryHelper.getDirectories(sourceDir);
-			
-			File referencedFile = new File(sourceDir + "/" + packageName + "/pubspec.yaml");
+
+			File referencedFile = new File(sourceDir + "/" + packageDir + "/pubspec.yaml");
 			if (referencedFile.exists()) {
 				ObjectMapper referencedObjectMapper = new YAMLMapper();
 				Map<String, Object> pubspecReferenced = referencedObjectMapper.readValue(referencedFile,
-			            new TypeReference<Map<String, Object>>() { });
+						new TypeReference<Map<String, Object>>() {
+						});
 				String currentPackageName = pubspecReferenced.get("name").toString();
-				if (currentPackageName.equals(packageName)) {
-					String currentVersion = pubspecReferenced.get("version").toString();
-					if (newVersion.equals("+1")) {
-						int pos = currentVersion.indexOf('+');
-						if (pos > 0) {
-							String remaining = currentVersion.substring(pos);
-							int number = Integer.parseInt(remaining); 
-							newNewVersion = currentVersion.substring(0, pos) + "+" + (number + 1);
-						} else {
-							newNewVersion = currentVersion + "+1";
-						}
+				String packageName = currentPackageName;
+				String currentVersion = pubspecReferenced.get("version").toString();
+				if (newVersion.equals("+1")) {
+					int pos = currentVersion.indexOf('+');
+					if (pos > 0) {
+						String remaining = currentVersion.substring(pos);
+						int number = Integer.parseInt(remaining);
+						newNewVersion = "^" + currentVersion.substring(0, pos) + "+" + (number + 1);
 					} else {
-						newNewVersion = newVersion;
+						newNewVersion = "^" + currentVersion + "+1";
 					}
-				
-					System.out.println(currentPackageName + " " + currentVersion + " => " + newNewVersion);
-					pubspecReferenced.put("version", newNewVersion);
-					referencedObjectMapper.writeValue(referencedFile, pubspecReferenced);
+				} else {
+					newNewVersion = "^" + newVersion;
+				}
 
-					boolean referencingFound = false;
-					for (File dir : directories) {
-						File sourceFile = new File(dir.getAbsolutePath() + "/pubspec.yaml");
-						if (sourceFile.exists()) {
-							ObjectMapper objectMapper = new YAMLMapper();
-							Map<String, Object> pubspec = objectMapper.readValue(sourceFile,
-						            new TypeReference<Map<String, Object>>() { });
-							currentPackageName = pubspec.get("name").toString();
-							if (!currentPackageName.equals(packageName)) {
-								// modify the dependencies
-								Map<String, Object> dependencies = (Map<String, Object>) pubspec.get("dependencies");
-								Object referencingVersion = dependencies.get(packageName);
-								if (referencingVersion != null) {
-									if (!referencingFound) {
-										System.out.println("    Following referring packages found:");
-										referencingFound = true;
-									}
-									System.out.println("    " + currentPackageName + " -> " + packageName + " " + referencingVersion.toString() + "=>" + newNewVersion);
-									dependencies.put(packageName, newNewVersion);
-									objectMapper.writeValue(sourceFile, pubspec);
+				System.out.println(currentPackageName + " " + currentVersion + " => " + newNewVersion);
+				pubspecReferenced.put("version", newNewVersion);
+				referencedObjectMapper.writeValue(referencedFile, pubspecReferenced);
+
+				boolean referencingFound = false;
+				for (File dir : directories) {
+					File sourceFile = new File(dir.getAbsolutePath() + "/pubspec.yaml");
+					if (sourceFile.exists()) {
+						ObjectMapper objectMapper = new YAMLMapper();
+						Map<String, Object> pubspec = objectMapper.readValue(sourceFile,
+								new TypeReference<Map<String, Object>>() {
+								});
+						currentPackageName = pubspec.get("name").toString();
+						if (!currentPackageName.equals(packageName)) {
+							// modify the dependencies
+							Map<String, Object> dependencies = (Map<String, Object>) pubspec.get("dependencies");
+							Object referencingVersion = dependencies.get(packageName);
+							if (referencingVersion != null) {
+								if (!referencingFound) {
+									System.out.println("    Following referring packages found:");
+									referencingFound = true;
 								}
+								System.out.println("    " + currentPackageName + " -> " + packageName + " "
+										+ referencingVersion.toString() + "=>" + newNewVersion);
+								dependencies.put(packageName, newNewVersion);
+								objectMapper.writeValue(sourceFile, pubspec);
 							}
 						}
 					}
-					
-					if (!referencingFound) {
-						System.out.println("    No referring packages found");
-					}
-
-				}  else {
-					System.out.println("Error: Cannot find package with name " + packageName + "");
 				}
-			
-			}  else {
+
+				if (!referencingFound) {
+					System.out.println("    No referring packages found");
+				}
+
+			} else {
 				System.out.println("Error: Cannot open file " + referencedFile.getAbsolutePath());
 			}
 		} catch (Exception e) {
