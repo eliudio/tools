@@ -108,8 +108,9 @@ public class ChangeVersion {
 					File sourceFile = new File(dir.getAbsolutePath() + "/pubspec.yaml");
 					if (sourceFile.exists()) {
 //						YAMLFactoryBuilder factory = (new YAMLFactory().builder()).stringQuotingChecker(new MyStringQuotingChecker());
-						YAMLFactoryBuilder factory = (new YAMLFactoryBuilder(myFactory)).configure(Feature.MINIMIZE_QUOTES, false);
+						YAMLFactoryBuilder factory = (new YAMLFactoryBuilder(myFactory)).configure(Feature.MINIMIZE_QUOTES, true);
 						ObjectMapper objectMapper = new YAMLMapper(factory.build());
+					
 						Map<String, Object> pubspec = objectMapper.readValue(sourceFile,
 								new TypeReference<Map<String, Object>>() {
 								});
