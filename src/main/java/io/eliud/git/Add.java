@@ -15,7 +15,10 @@ public class Add {
 
 	public static void main(String[] args) {
 		try {
+			// current directory
 			String sourceDir = System.getProperty("user.dir");
+			System.out.println("Current directory: " + sourceDir);
+
 			File[] directories = DirectoryHelper.getDirectories(sourceDir);
 			for (File dir : directories) {
 
@@ -27,7 +30,6 @@ public class Add {
 					System.out.println(dir);
 					git.add().addFilepattern(".").call();
 					//git.add().setUpdate(true).addFilepattern(".").call();
-					System.out.println();
 				}
 			}
 		} catch (Exception e) {

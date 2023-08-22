@@ -3,39 +3,119 @@ package io.eliud.misc.yaml;
 import java.io.File;
 import java.util.Map;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
+import io.eliud.git.Commit;
 import io.eliud.misc.helper.DirectoryHelper;
 
 public class ChangeVersion {
 
 	public static void main(String[] args) {
+		// current directory
+		String sourceDir = System.getProperty("user.dir");
+		System.out.println("Current directory: " + sourceDir);
+
+        Options options = new Options();
+        Option packageOption = new Option("p", "package", true, "The package of which you want to change it's version, e.g. eliud_pkg_apps");
+        packageOption .setRequired(true);
+        options.addOption(packageOption);
+        Option versionOption = new Option("v", "version", true, "The version the package should become (or +1 to bump one up), e.g. 1.4.1, 1.4.1+3 or +1");
+        versionOption .setRequired(true);
+        options.addOption(versionOption);
+
+        CommandLineParser parser = new DefaultParser();
+        HelpFormatter formatter = new HelpFormatter();
+
+        try {
+	        CommandLine cmd = parser.parse(options, args);
+	        String packageName = cmd.getOptionValue("package");
+	        String newVersion = cmd.getOptionValue("version");
+		
+	        change(sourceDir, packageName, newVersion);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            formatter.printHelp(ChangeVersion.class.getName(), options);
+
+            System.exit(1);
+
+		}
+    }
+
+	public static void change(String sourceDir, String packageName, String newVersion) {
 		try {
-			String sourceDir = "C:\\src\\eliud"; // Pdf files are read from this folder
-			String packageName = "eliud_core";
-			String newVersion = "1.0.4+7";
-			
+			String newNewVersion;
 			File[] directories = DirectoryHelper.getDirectories(sourceDir);
-			for (File dir : directories) {
-				File sourceFile = new File(dir.getAbsolutePath() + "/pubspec.yaml");
-				if (sourceFile.exists()) {
-					ObjectMapper objectMapper = new YAMLMapper();
-					Map<String, Object> pubspec = objectMapper.readValue(sourceFile,
-				            new TypeReference<Map<String, Object>>() { });
-					String currentPackageName = pubspec.get("name").toString();
-					if (currentPackageName.equals(packageName)) {
-						System.out.println("Updating " + currentPackageName);
-						pubspec.put("version", newVersion);
+			
+			File referencedFile = new File(sourceDir + "/" + packageName + "/pubspec.yaml");
+			if (referencedFile.exists()) {
+				ObjectMapper referencedObjectMapper = new YAMLMapper();
+				Map<String, Object> pubspecReferenced = referencedObjectMapper.readValue(referencedFile,
+			            new TypeReference<Map<String, Object>>() { });
+				String currentPackageName = pubspecReferenced.get("name").toString();
+				if (currentPackageName.equals(packageName)) {
+					String currentVersion = pubspecReferenced.get("version").toString();
+					if (newVersion == "+1") {
+						int pos = currentVersion.indexOf('+');
+						if (pos > 0) {
+							String remaining = currentVersion.substring(pos);
+							int number = Integer.parseInt(remaining); 
+							newNewVersion = currentVersion.substring(0, pos) + "+" + (number + 1);
+						} else {
+							newNewVersion = currentVersion + "+1";
+						}
 					} else {
-						System.out.println("Updating " + currentPackageName + " (dep)");
-						// modify the dependencies
-						Map<String, Object> dependencies = (Map<String, Object>) pubspec.get("dependencies");
-						dependencies.put(packageName, newVersion);
+						newNewVersion = newVersion;
 					}
-					objectMapper.writeValue(sourceFile, pubspec);
+				
+					System.out.println(currentPackageName + " " + currentVersion + " => " + newNewVersion);
+					pubspecReferenced.put("version", newNewVersion);
+					referencedObjectMapper.writeValue(referencedFile, pubspecReferenced);
+
+					boolean referencingFound = false;
+					for (File dir : directories) {
+						File sourceFile = new File(dir.getAbsolutePath() + "/pubspec.yaml");
+						if (sourceFile.exists()) {
+							ObjectMapper objectMapper = new YAMLMapper();
+							Map<String, Object> pubspec = objectMapper.readValue(sourceFile,
+						            new TypeReference<Map<String, Object>>() { });
+							currentPackageName = pubspec.get("name").toString();
+							if (!currentPackageName.equals(packageName)) {
+								// modify the dependencies
+								Map<String, Object> dependencies = (Map<String, Object>) pubspec.get("dependencies");
+								Object referencingVersion = dependencies.get(packageName);
+								if (referencingVersion != null) {
+									if (!referencingFound) {
+										System.out.println("    Following referring packages found:");
+										referencingFound = true;
+									}
+									System.out.println("    " + currentPackageName + " -> " + packageName + " " + referencingVersion.toString() + "=>" + newNewVersion);
+									dependencies.put(packageName, newNewVersion);
+									objectMapper.writeValue(sourceFile, pubspec);
+								}
+							}
+						}
+					}
+					
+					if (!referencingFound) {
+						System.out.println("    No referring packages found");
+					}
+
+				}  else {
+					System.out.println("Error: Cannot find package with name " + packageName + "");
 				}
+			
+			}  else {
+				System.out.println("Error: Cannot open file " + referencedFile.getAbsolutePath());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

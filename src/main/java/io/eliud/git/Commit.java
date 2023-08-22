@@ -24,7 +24,9 @@ public class Commit {
 
 	public static void main(String[] args) {
 		try {
+			// current directory
 			String sourceDir = System.getProperty("user.dir");
+			System.out.println("Current directory: " + sourceDir);
 
 	        Options options = new Options();
 	        Option messageOption = new Option("m", "message", true, "The commit message");

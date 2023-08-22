@@ -28,7 +28,11 @@ public class Push {
 				System.exit(-1);
 			}
 			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(userName, password);
+			
+			// current directory
 			String sourceDir = System.getProperty("user.dir");
+			System.out.println("Current directory: " + sourceDir);
+
 			File[] directories = DirectoryHelper.getDirectories(sourceDir);
 			for (File dir : directories) {
 

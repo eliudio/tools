@@ -16,7 +16,10 @@ public class Status {
 
 	public static void main(String[] args) {
 		try {
+			// current directory
 			String sourceDir = System.getProperty("user.dir");
+			System.out.println("Current directory: " + sourceDir);
+
 			File[] directories = DirectoryHelper.getDirectories(sourceDir);
 			for (File dir : directories) {
 				reportedDir = false;
