@@ -117,7 +117,6 @@ public class ChangeVersion {
 				for (File dir : directories) {
 					File sourceFile = new File(dir.getAbsolutePath() + "/pubspec.yaml");
 					if (sourceFile.exists()) {
-//						YAMLFactoryBuilder factory = (new YAMLFactory().builder()).stringQuotingChecker(new MyStringQuotingChecker());
 						YAMLFactoryBuilder factory = (new YAMLFactoryBuilder(myFactory)).configure(Feature.MINIMIZE_QUOTES, true);
 						ObjectMapper objectMapper = new YAMLMapper(factory.build());
 					
