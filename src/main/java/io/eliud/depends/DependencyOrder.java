@@ -62,8 +62,20 @@ public class DependencyOrder {
 
 	static YAMLFactory myFactory = new YAMLFactory();
 	static YAMLFactoryBuilder factory = (new YAMLFactoryBuilder(myFactory)).configure(Feature.MINIMIZE_QUOTES, true);
+	
+	static class Project {
+		public String name;
+		public String version;
+		public Vector<String> dependencies;
+		
+		public Project(String name, String version, Vector<String> dependencies) {
+			this.name = name;
+			this.version = version;
+			this.dependencies = dependencies;
+		}
+	}
 
-	public static Vector<String> getDependencies(File dir) {
+	public static Project getDependencies(File dir) {
 		if (!hasPubSpec(dir)) return null;
 
 		File sourceFile = new File(dir.getAbsoluteFile() + "/pubspec.yaml");
@@ -77,6 +89,8 @@ public class DependencyOrder {
 						new TypeReference<Map<String, Object>>() {
 						});
 
+				String name = pubspec.get("name").toString();
+				String version = pubspec.get("version").toString();
 				Vector<String> vectorRep = new Vector<>();
 				Map<String, Object> dependencies = (Map<String, Object>) pubspec.get("dependencies");
 				for (Map.Entry<String, Object> entry : dependencies.entrySet()) {
@@ -86,7 +100,7 @@ public class DependencyOrder {
 				  }
 			    }
 				
-				return vectorRep;
+				return new Project(name, version, vectorRep);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -94,7 +108,8 @@ public class DependencyOrder {
 		return null;
 	}
 	
-	static Map<String, Vector<String>> projectsWithDependencies = new HashMap<>();
+	static Map<String, String> projectAndVersion = new HashMap<>();
+	static Map<String, Project> projectsWithDependencies = new HashMap<>();
 	static Vector<String> orderedProjects = new Vector<>();
 	
 	static boolean hasDependencyOutsideOrderedProjects(Vector<String> orderedProjects, Vector<String> dependencies) {
@@ -112,16 +127,16 @@ public class DependencyOrder {
 		for (int i = 0; i < directories.length; i++) {
 			File directory = directories[i];
 			if (hasPubSpec(directory)) {
-				Vector<String> deps = getDependencies(directory);
-				projectsWithDependencies.put(directory.getName(), deps);
+				Project project = getDependencies(directory);
+				projectsWithDependencies.put(directory.getName(), project);
 			}
 		}
 		
 		// run algo to order
 		while (orderedProjects.size() < projectsWithDependencies.size()) {
-			for (Map.Entry<String, Vector<String>> entry : projectsWithDependencies.entrySet()) {
+			for (Map.Entry<String, Project> entry : projectsWithDependencies.entrySet()) {
 				if (!orderedProjects.contains(entry.getKey())) {
-					if (hasDependencyOutsideOrderedProjects(orderedProjects, entry.getValue())) {
+					if (hasDependencyOutsideOrderedProjects(orderedProjects, entry.getValue().dependencies)) {
 						orderedProjects.add(entry.getKey());
 						break;
 					}
@@ -129,9 +144,9 @@ public class DependencyOrder {
 			}
 		}
 		
-		System.out.println("Packages ordered so that no package depends on anything but a package above itself:");
+		System.out.println("Packages ordered so that no package depends on anything but one or more of packages above itself in this list:");
 		for (int i = 0; i < orderedProjects.size(); i++) {
-			System.out.println(orderedProjects.get(i));
+			System.out.println(orderedProjects.get(i) + " " + projectsWithDependencies.get(orderedProjects.get(i)).version);
 		}
 		
 	}
